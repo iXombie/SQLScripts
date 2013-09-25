@@ -22,7 +22,7 @@
 declare @SOURCEDB nvarchar(128) = 'Shelby_641';
 declare @DESTDB nvarchar(128) = 'test';
 declare @TABLESEARCH nvarchar(128) = 'cfp_aub_survey%';
-declare @BACKUPPATH nvarchar(128) = null--'c:\test\';
+declare @BACKUPPATH nvarchar(128) = 'c:\test\';
 
 -------------------------------------------------
 --- NOTHING BELOW THIS LINE SHOULD BE CHANGED ---
@@ -101,7 +101,7 @@ begin try
 				 end
 				 else
 				 begin
-					print ''Skipping ''' + @TABLENAME + ''' table already exists''
+					print ''Skipping "' + @TABLENAME + '" table already exists''
 				 end'
 			)
 		end
