@@ -21,8 +21,8 @@
 
 declare @SOURCEDB nvarchar(128) = 'Shelby_641';
 declare @DESTDB nvarchar(128) = 'test';
-declare @TABLESEARCH nvarchar(128) = 'cfp_aub%';
-declare @BACKUPPATH nvarchar(128) = 'c:\test\';
+declare @TABLESEARCH nvarchar(128) = 'cfp_aub_survey%';
+declare @BACKUPPATH nvarchar(128) = null--'c:\test\';
 
 -------------------------------------------------
 --- NOTHING BELOW THIS LINE SHOULD BE CHANGED ---
@@ -31,13 +31,13 @@ begin try
 	set nocount on
 	declare @BACKUP bit = 1;
 
-	if not @BACKUPPATH LIKE '%\'
+	if (@BACKUPPATH = '' or @BACKUPPATH is null)
 	begin
-		if (@BACKUPPATH = '' or @BACKUPPATH is null)
-		begin
-			set @BACKUP = 0;
-		end
-		else
+		set @BACKUP = 0;
+	end
+	else
+	begin
+		if not @BACKUPPATH LIKE '%\'
 		begin
 			set @BACKUPPATH = @BACKUPPATH + '\';
 		end
@@ -95,7 +95,14 @@ begin try
 		begin
 			exec
 			(
-				'select * into ' + @DESTDB + '.'+ @TABLENAME + ' from ' + @SOURCEDB +'.'+ @TABLENAME
+				'if OBJECT_ID(''' + @DESTDB + '.'+ @TABLENAME + ''') is null
+				 begin
+					select * into ' + @DESTDB + '.'+ @TABLENAME + ' from ' + @SOURCEDB +'.'+ @TABLENAME + '
+				 end
+				 else
+				 begin
+					print ''Skipping ''' + @TABLENAME + ''' table already exists''
+				 end'
 			)
 		end
 	end
@@ -112,6 +119,7 @@ begin try
 				(
 					'backup database ' + @DESTDB +' to disk='''+ @BACKUPPATH + @DESTDB +'.bak'''
 				)
+			print 'Backup saved to "' + @BACKUPPATH + @DESTDB +'.bak"'
 		end
 	end
 	else
@@ -119,15 +127,15 @@ begin try
 		print 'No tables were backed up'
 	end
 
-	if @DBCREATED = 1
+	if @DBCREATED = 1 and @BACKUP = 1
 	begin
 		exec
 			(
 				'drop database ' + @DESTDB
 			)
 	end
+	print 'Completed'
 	
-	print 'Backup saved to "' + @BACKUPPATH + @DESTDB +'.bak"'
 end try
 begin catch
 	declare @ERRORMESSAGE nvarchar(max), @ERRORSEVERITY int, @ERRORSTATE int;
